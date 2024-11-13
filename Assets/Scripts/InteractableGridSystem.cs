@@ -15,6 +15,8 @@ public class InteractableGridSystem : GridSystem<Interactable>
     {
         CreateGrid();
         interactablePool.InitializePool(Dimensions);
+        GetComponent<GridPlacer>().PlaceGrid();
+        
         FillGrid();
     }
 
@@ -37,5 +39,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
             startPosition.y = transform.position.y;
         }
     }
+
+    
     
 }

@@ -3,76 +3,72 @@ using UnityEngine;
 [RequireComponent(typeof(InteractableGridSystem))]
 public class GridPlacer : MonoBehaviour
 {
-    private void Awake() {
+    private void Awake()
+    {
         interactableGridSystem = GetComponent<InteractableGridSystem>();
     }
     InteractableGridSystem interactableGridSystem;
 
     Vector2Int Dimensions => interactableGridSystem.Dimensions;
-    float gridUnit => interactableGridSystem.GridSpacing;
+
+
+    float GridUnit => interactableGridSystem.GridSpacing;
+
+    float GridWidth => Dimensions.x * GridUnit;
+    float GridHeight => Dimensions.y * GridUnit;
 
     public GameObject backGround;
     public float backGroundGridScale = 1.1f;
 
     [SerializeField]
     Vector3 verticalOfscreenGridOffset = new Vector3(0, 0, 0);
-    private float gridBottomOffset = 1.5f;
+    private float gridBottomOffset = 1f;
 
-    void Start()
+    public void PlaceGrid()
     {
+        PositioningGridOnTheScreen();
         ResizeAndPlaceBackground();
+
     }
 
     private void ResizeAndPlaceBackground()
     {
-        //Getting corners in order to calculate sizes of the scene in both direction in world unit
-        Vector3 bottomLeft = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, Camera.main.nearClipPlane));
-        Vector3 topRight = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, Camera.main.nearClipPlane));
+        // Scale the background to be slightly larger than the grid
+        float backgroundWidth = GridWidth * backGroundGridScale;
+        float backgroundHeight = GridHeight * backGroundGridScale;
 
-        //calculating sizes of the scene in both direction in world unit
-        float worldWidth = topRight.x - bottomLeft.x;
-        float worldHeight = topRight.y - bottomLeft.y;
+        // Set the background size
+        SpriteRenderer bgRenderer = backGround.GetComponent<SpriteRenderer>();
+        bgRenderer.size = new Vector2(backgroundWidth, backgroundHeight);
 
-        // Calculate the width and height of the grid based on dimensions using grid sizes and unit sizes
-        float gridWidth = interactableGridSystem.Dimensions.x * gridUnit;
-        float gridHeight = Dimensions.y * gridUnit;
+        // Calculate the background position
+        Vector3 gridCenter = transform.position + new Vector3(GridWidth / 2f, GridHeight / 2f, 0f);
 
-        // Increase the size slightly to ensure the background is larger than the grid
-        float backgroundWidth = gridWidth * backGroundGridScale;
-        float backgroundHeight = gridHeight * backGroundGridScale;
+        //Remove half of the grid element size from position x and y to center the grid
+        float halfGridUnit = GridUnit / 2f;
+        gridCenter -= new Vector3(halfGridUnit, halfGridUnit, 0f);
 
-        // Calculate the difference between the background and grid sizes to align the background on grid perfectly
-        float differenceInWidth = backgroundWidth - gridWidth;
-        float differenceInHeight = backgroundHeight - gridHeight;
-
-        // Set the background size to cover the entire grid
-        backGround.GetComponent<SpriteRenderer>().size = new Vector2(backgroundWidth, backgroundHeight);
-        //backGround.transform.localScale = new Vector3(backgroundWidth, backgroundHeight, 1f);
-
-        // Get the bounds of the SpriteRenderer
-        Bounds bounds = backGround.GetComponent<SpriteRenderer>().bounds;
-
-        // Calculate the offset to align the bottom left corner of the background with the grid
-        Vector3 offset = new Vector3(bounds.extents.x, bounds.extents.y, 0);
-
-        // Set the position to match the target position, considering the offset
-        backGround.transform.position = transform.position + offset + verticalOfscreenGridOffset - new Vector3(differenceInWidth, differenceInHeight) / 2f;
+        // Position the background at the grid center, adjusted for scaling
+        backGround.transform.position = gridCenter  ;
 
     }
 
     private void PositioningGridOnTheScreen()
     {
         // Get screen bounds in world units
-        Vector3 bottomLeft = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, Camera.main.nearClipPlane));
-        Vector3 topRight = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, Camera.main.nearClipPlane));
+        Vector3 bottomLeft = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
+        Vector3 topRight = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, -Camera.main.transform.position.z));
 
         float worldWidth = topRight.x - bottomLeft.x;
-        float worldHeight = topRight.y - bottomLeft.y;
-        float gridXPosition = (worldWidth - (Dimensions.x * .5f)) / 2f;
-        float gridYPosition = gridBottomOffset;
 
-        // Set the position of the grid to the bottom left
-        transform.position = bottomLeft + new Vector3(gridXPosition, gridYPosition, 1f);
+        //Add half of the grid element size
+        float halfGridUnit = GridUnit / 2f;
+
+        // Center the grid horizontally and apply vertical offset
+        float gridXPosition = bottomLeft.x + (worldWidth - GridWidth)/ 2f + halfGridUnit;
+        float gridYPosition = bottomLeft.y + gridBottomOffset + halfGridUnit;
+
+        // Set the position of the grid
+        transform.position = new Vector3(gridXPosition, gridYPosition, 0f)  + verticalOfscreenGridOffset;
     }
-
 }
