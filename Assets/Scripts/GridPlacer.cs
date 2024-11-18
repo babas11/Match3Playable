@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(InteractableGridSystem))]
@@ -7,9 +8,13 @@ public class GridPlacer : MonoBehaviour
     {
         interactableGridSystem = GetComponent<InteractableGridSystem>();
     }
+
+
     InteractableGridSystem interactableGridSystem;
 
     Vector2Int Dimensions => interactableGridSystem.Dimensions;
+
+    public Event OnGridPlaced;
 
 
     float GridUnit => interactableGridSystem.GridSpacing;
@@ -28,11 +33,13 @@ public class GridPlacer : MonoBehaviour
     {
         PositioningGridOnTheScreen();
         ResizeAndPlaceBackground();
-
+        backGround.GetComponent<MaskPlacer>().InıtMask(backGroundGridScale);
+        
     }
 
     private void ResizeAndPlaceBackground()
     {
+        
         // Scale the background to be slightly larger than the grid
         float backgroundWidth = GridWidth * backGroundGridScale;
         float backgroundHeight = GridHeight * backGroundGridScale;
@@ -40,6 +47,8 @@ public class GridPlacer : MonoBehaviour
         // Set the background size
         SpriteRenderer bgRenderer = backGround.GetComponent<SpriteRenderer>();
         bgRenderer.size = new Vector2(backgroundWidth, backgroundHeight);
+
+        
 
         // Calculate the background position
         Vector3 gridCenter = transform.position + new Vector3(GridWidth / 2f, GridHeight / 2f, 0f);
@@ -49,9 +58,12 @@ public class GridPlacer : MonoBehaviour
         gridCenter -= new Vector3(halfGridUnit, halfGridUnit, 0f);
 
         // Position the background at the grid center, adjusted for scaling
-        backGround.transform.position = gridCenter  ;
+        backGround.transform.position = gridCenter;
+
 
     }
+
+   
 
     private void PositioningGridOnTheScreen()
     {
