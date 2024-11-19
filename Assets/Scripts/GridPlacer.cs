@@ -27,6 +27,8 @@ public class GridPlacer : MonoBehaviour
 
     [SerializeField]
     Vector3 verticalOfscreenGridOffset = new Vector3(0, 0, 0);
+
+    [SerializeField]
     private float gridBottomOffset = 1f;
 
     public void PlaceGrid()

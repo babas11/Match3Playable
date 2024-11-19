@@ -20,7 +20,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
     private bool isSpinning = false;
 
     [SerializeField]
-    private float currentSpinSpeed = 10f; // Adjust as needed
+    private float currentSpinSpeed = 10f; 
 
     private float spinSpeedBottomLimit = 10f;
     private float deceleration = 1f;
@@ -38,7 +38,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
     private SpinState spinState = SpinState.Idle;
     private int activeCoroutines = 0;
 
-    private void Start()
+    public void SetUpGrid()
     {
         CreateGrid();
         interactablePool.InitializePool(Dimensions);
@@ -51,7 +51,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
         for (int i = 0; i < Dimensions.x; i++)
         {
             columnSpinStates[i] = SpinState.Idle;
-            currentSpinSpeeds[i] = currentSpinSpeed; // Assuming currentSpinSpeed is your initial speed
+            currentSpinSpeeds[i] = currentSpinSpeed; 
         }
     }
 
@@ -60,7 +60,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
         Vector3 startPosition = transform.position;
         for (int x = 0; x < Dimensions.x; x++)
         {
-            startPosition.y = transform.position.y; // Reset Y position for each column
+            startPosition.y = transform.position.y; 
             for (int y = 0; y < Dimensions.y; y++)
             {
                 Interactable interactable = interactablePool.GetObjectFromPool();
@@ -140,6 +140,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
     public void StartSpin()
     {
+        GameManager.Instance.UpdateGameState(GameStates.Spinning);
 
         switch (spinState)
         {
@@ -180,6 +181,8 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
     public void SpinColumn(int columnIndex)
     {
+
+        
         List<Interactable> column = GetColumn(columnIndex);
 
         spinCoroutines[columnIndex] = StartCoroutine(SpinColumn(column, columnIndex));
@@ -268,11 +271,16 @@ public class InteractableGridSystem : GridSystem<Interactable>
                 {
                     Debug.Log($"Column {columnIndex}: Stopping spin.");
                     columnSpinStates[columnIndex] = SpinState.Idle;
+                    
                 }
                 else if (columnSpinStates[columnIndex - 1] == SpinState.Idle)
                 {
                     Debug.Log($"Column {columnIndex}: No Match, Stopping spin.");
                     columnSpinStates[columnIndex] = SpinState.Idle;
+                    if(columnIndex == Dimensions.x - 1){
+                        print("UpdateSpin");
+                        GameManager.Instance.UpdateGameState(GameStates.SpinActive);
+                    }
                 }
             }
 
@@ -415,17 +423,17 @@ public class InteractableGridSystem : GridSystem<Interactable>
         interactable1Matches = GetMatches(copies[1]);
 
         if(interactable0Matches != null){
-            print("Won");
+            GameManager.Instance.UpdateGameState(GameStates.Won);
         }
         if(interactable1Matches != null){
-            print("Won");
+            GameManager.Instance.UpdateGameState(GameStates.Won);
+        }
+        if(interactable0Matches == null && interactable1Matches == null && UIManager.Instance.moveCount == 0){
+            GameManager.Instance.UpdateGameState(GameStates.Lost);
         }
 
         StartCoroutine(AnimateSwap(copies));
-
         
-
-
 
         yield return null;
 
@@ -496,7 +504,8 @@ public class InteractableGridSystem : GridSystem<Interactable>
         Tween tween0 = interactables[0].transform.DOMove(targetPositions[0], 0.3f)
             .SetEase(Ease.InOutQuad)
             .OnStart(() => interactable0.Idle = false)
-            .OnComplete(() => interactable0.Idle = true);
+            .OnComplete(() => {
+                interactable0.Idle = true;});
 
         Tween tween1 = interactables[1].transform.DOMove(targetPositions[1], 0.3f)
             .SetEase(Ease.InOutQuad)

@@ -11,10 +11,7 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
 
     T[,] gridArray;
 
-    private void Start()
-    {
-        CreateGrid();
-    }
+    
 
     public void CreateGrid(/* Vector2Int gridSize */)
     {
