@@ -31,6 +31,16 @@ public class InteractablePool : ObjectPool<Interactable>
     {
         interactable.SetInteractable(interactableSprites[id], id);
     }
+    public void SetToNextInteractable(Interactable interactable)
+    {
+        int idToMove = interactable.id;
+        
+        if(idToMove == howManyInteractables - 1){
+            SetInteractable(interactable,0);
+        }else{
+            SetInteractable(interactable,idToMove++);
+        }
+    }
 
     public void ChangeInteractable(Interactable interactable){
         int interactableCurrentId = interactable.id;
