@@ -24,12 +24,12 @@ public class InteractablePool : ObjectPool<Interactable>
     public void SetInteractable(Interactable interactable)
     {
         int random = Random.Range(0, howManyInteractables);
-        interactable.SetInteractable(interactableSprites[random], random);
+        interactable.SetInteractableInMatrix(interactableSprites[random], random);
     }
 
     public void SetInteractable(Interactable interactable,int id)
     {
-        interactable.SetInteractable(interactableSprites[id], id);
+        interactable.SetInteractableInMatrix(interactableSprites[id], id);
     }
     public void SetToNextInteractable(Interactable interactable)
     {

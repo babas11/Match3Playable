@@ -128,4 +128,16 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
 
     }
 
+    public void ChangeItemsAt(Vector2Int position1, Vector2Int position2){
+        if (!IsInsideGrid(position1)){Debug.LogError($"{position1} is outside of the grid");}
+        if (!IsInsideGrid(position2)){Debug.LogError($"{position2} is outside of the grid");}
+
+        T temp = gridArray[position1.x,position1.y];
+
+        gridArray[position1.x,position1.y] = gridArray[position2.x,position2.y];
+        gridArray[position2.x,position2.y] = temp;
+
+
+    }
+
 }
