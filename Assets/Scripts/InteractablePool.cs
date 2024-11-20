@@ -10,15 +10,19 @@ public class InteractablePool : ObjectPool<Interactable>
 
     SpriteMask spriteMask;
 
-    private void Awake() {
+    public bool Ready {get;private set;} = false;
+
+    private void Awake()
+    {
         spriteMask = GetComponent<SpriteMask>();
-        
+
     }
 
 
     public void InitializePool(Vector2Int gridSize)
     {
         CreatePool(gridSize.x * gridSize.y * 2);
+        Ready = true;
     }
 
     public void SetInteractable(Interactable interactable)
@@ -27,29 +31,48 @@ public class InteractablePool : ObjectPool<Interactable>
         interactable.SetInteractableInMatrix(interactableSprites[random], random);
     }
 
-    public void SetInteractable(Interactable interactable,int id)
+    public void SetInteractable(Interactable interactable, int id)
     {
         interactable.SetInteractableInMatrix(interactableSprites[id], id);
     }
     public void SetToNextInteractable(Interactable interactable)
     {
         int idToMove = interactable.id;
-        
-        if(idToMove == howManyInteractables - 1){
-            SetInteractable(interactable,0);
-        }else{
-            SetInteractable(interactable,idToMove++);
+
+        if (idToMove == howManyInteractables - 1)
+        {
+            SetInteractable(interactable, 0);
+        }
+        else
+        {
+            SetInteractable(interactable, idToMove++);
         }
     }
 
-    public void ChangeInteractable(Interactable interactable){
+    public void ChangeInteractable(Interactable interactable)
+    {
         int interactableCurrentId = interactable.id;
-        if(interactableCurrentId != howManyInteractables - 1){
+        if (interactableCurrentId != howManyInteractables - 1)
+        {
             interactableCurrentId++;
-        }else{
+        }
+        else
+        {
             interactableCurrentId = 0;
         }
-        SetInteractable(interactable,interactableCurrentId);
+        SetInteractable(interactable, interactableCurrentId);
     }
-    
+
+    public void ClearInteractablePool()
+    {
+        Vector2Int defaultMatrixPosition = new Vector2Int(-1, -1);
+        foreach (Interactable element in pool)
+        {
+            element.matrixPosition = defaultMatrixPosition;
+            element.id = default;
+        }
+        ClearPool();
+
+    }
+
 }

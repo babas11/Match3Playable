@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    
+
     public static GameStates State;
 
     InteractableGridSystem grid;
@@ -28,18 +28,21 @@ public class GameManager : MonoBehaviour
         selector = GameObject.FindObjectOfType<InteractableSelector>();
         uiManager = UIManager.Instance;
 
-       
-        
+
+
     }
 
     private void Start()
     {
-        
+
         grid.SetUpGrid();
         uiManager.InitUI();
-        uiManager.spinButton.onButtonDown.AddListener(() => grid.StartSpin());
+        uiManager.SpinButton.onButtonDown.AddListener(() => grid.StartSpin());
+        uiManager.ContinueButton.onButtonDown.AddListener(() => RestartGame());
+
         UpdateGameState(GameStates.GameStart);
     }
+
 
     public void UpdateGameState(GameStates newState)
     {
@@ -48,28 +51,34 @@ public class GameManager : MonoBehaviour
         switch (State)
         {
             case GameStates.GameStart:
-            uiManager.RevealSpinButton();
+                uiManager.RevealSpinButton();
                 break;
             case GameStates.SpinActive:
-
+                uiManager.ChangeButtonImage(true);
+                uiManager.ActivateSpinButton(true);
                 break;
             case GameStates.Spinning:
+                uiManager.ChangeButtonImage(false);
                 break;
             case GameStates.MatchingActive:
                 uiManager.RemoveSpinButton();
                 //Selector Active
                 break;
-            case GameStates.Won:
-            print("Won");
-                //Selector Deactive
-                //UI Pop Out
+            case GameStates.LastMove:
+                //No grid input in this state
                 break;
-            case GameStates.Lost:
-            print("You Lost");
-                //Selector Deactive
-                //UI Pop Out
+            case GameStates.Won:
+                print("Won");
+                uiManager.RevealWonUI();
                 break;
         }
+    }
+
+    void RestartGame(){
+        uiManager.RemoveWinUI();
+        grid.ClearGrid();
+        grid.SetUpGrid();
+        UpdateGameState(GameStates.GameStart);
     }
 
 
@@ -81,5 +90,5 @@ public enum GameStates
     Spinning,
     MatchingActive,
     Won,
-    Lost
+    LastMove
 }

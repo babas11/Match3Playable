@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
+public abstract class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
 {
 
     [SerializeField]
@@ -10,7 +10,7 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
     [SerializeField]
     int poolSize;
 
-    List<T> pool;
+    protected List<T> pool;
 
     public void CreatePool(int amount = 0)
     {
@@ -21,7 +21,7 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
         }
 
         //Set the pool size
-        this.poolSize = amount;   
+        this.poolSize = amount;
 
         //Create a new list of objects
         pool = new List<T>(amount);
@@ -31,7 +31,7 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
         {
             GameObject poolElement = Instantiate(prefab, transform);
             pool.Add(poolElement.GetComponent<T>());
-            
+
             //Deactivate the object
             poolElement.SetActive(false);
         }
@@ -47,7 +47,7 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
                 return pool[i].GetComponent<T>();
             }
         }
-        
+
         //If there are no inactive objects create a new one, add it to the pool and return it
         GameObject poolElement = Instantiate(prefab, transform);
         pool.Add(poolElement.GetComponent<T>());
@@ -58,12 +58,25 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
 
     public void ReturnObjectToPool(T objectToReturn)
     {
-        if(objectToReturn == null)
+        if (objectToReturn == null)
         {
             Debug.LogError("Object is null");
             return;
         }
 
         objectToReturn.gameObject.SetActive(false);
+    }
+
+    public void ClearPool()
+    {
+        foreach (T item in pool)
+        {
+            if (item != null)
+            {
+                ReturnObjectToPool(item);
+            }
+        }
+        pool.Clear(); // Clear the pool list
+        poolSize = 0;
     }
 }

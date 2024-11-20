@@ -18,6 +18,8 @@ public class Interactable : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        
+        //(-1, -1) assigned default matrixPosition
         matrixPosition = new Vector2Int(-1, -1);
     }
 

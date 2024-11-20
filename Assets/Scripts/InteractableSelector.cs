@@ -33,8 +33,6 @@ public class InteractableSelector : MonoBehaviour
 
         if(!enabled || selected[0] == null) return;
 
-        UIManager.Instance.MoveMade();
-
     }
 
     public void SelectSecond(Interactable toMatch)
