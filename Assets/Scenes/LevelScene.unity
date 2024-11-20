@@ -646,7 +646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 262aeb325960940a1919bf9674933515, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maskObject: {fileID: 8668724343082653868, guid: 05c2788fbfedc43dca23518c45118e5f, type: 3}
+  maskPrefab: {fileID: 8668724343082653868, guid: 05c2788fbfedc43dca23518c45118e5f, type: 3}
 --- !u!1001 &7323801236340257388
 PrefabInstance:
   m_ObjectHideFlags: 0
