@@ -4,14 +4,21 @@ using UnityEngine;
 
 public class MaskPlacer : MonoBehaviour
 {
-    [SerializeField] GameObject maskObject;
+    [SerializeField] GameObject maskPrefab;
+    private GameObject maskInstance;
     // Start is called before the first frame update
-    public void InıtMask(float scale){
-        maskObject = Instantiate(maskObject);
-        maskObject.transform.parent = transform;
-        maskObject.transform.position = transform.position;
+    public void InıtMask(float scale)
+    {
+       if (maskInstance == null)
+        {
+            maskInstance = Instantiate(maskPrefab, transform);
+        }
+
+        // Set the position and scale of the mask instance
+        maskInstance.transform.position = transform.position;
+
         Vector3 maskSize = GetComponent<SpriteRenderer>().bounds.size;
 
-        maskObject.transform.localScale = maskSize / scale;
+        maskInstance.transform.localScale = maskSize / scale;
     }
 }

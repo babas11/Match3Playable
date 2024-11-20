@@ -109,7 +109,7 @@ public class UIManager : MonoBehaviour
         Vector3 offScreenY = startPos - Vector3.down * 2;
         Vector3 startScale = SpinButton.transform.localScale;
         SpinButton.transform.DOScale(spinButtonAnimationMaxScale, 0.1f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
-        SpinButton.transform.DOMoveY(-buttonOffScreenDistance, .8f));
+        SpinButton.transform.DOMoveY(-buttonOffScreenDistance, .2f));
 
     }
     public void RevealSpinButton()
@@ -120,7 +120,7 @@ public class UIManager : MonoBehaviour
         ActivateSpinButton(true);
         SpinButton.transform.DOMoveY(GetBottomLeft().y + spinButtonBottomDistance, 1f)
                             .OnComplete(() =>
-        SpinButton.transform.DOScale(spinButtonAnimationMaxScale, 0.1f).SetLoops(2, LoopType.Yoyo));
+        SpinButton.transform.DOScale(spinButtonAnimationMaxScale, 0.4f).SetLoops(2, LoopType.Yoyo));
     }
     #endregion
 
@@ -188,6 +188,8 @@ public class UIManager : MonoBehaviour
 
     public void RevealWonUI()
     {
+        ResetPopUpElements();
+        
         // Animate the color to full transparency
         Color fullTransparent = new Color(1, 1, 1, 0); // Fully transparent color
         transparentRenderer.DOColor(transparentColor, 0.5f);
@@ -227,6 +229,31 @@ public class UIManager : MonoBehaviour
         );
 
     }
+
+    private void ResetPopUpElements()
+    {
+        // Reset the transparentRenderer color to fully transparent
+        transparentRenderer.color = new Color(1, 1, 1, 0);
+
+        // Reset positions
+        winBackGrounRenderer.transform.position = victoryBackPosition;
+        victoryLabelRenderer.transform.position = completedLabelPosition;
+        starRenderer.transform.position = winStarPosition + new Vector3(-8, 0, 1); // Corrected the Y component
+        ContinueButton.transform.position = continuePosition;
+
+        // Reset scales
+        winBackGrounRenderer.transform.localScale = victoryBackScale;
+        victoryLabelRenderer.transform.localScale = completedLabelScale;
+        starRenderer.transform.localScale = winStarScale;
+        ContinueButton.transform.localScale = continueLabelScale;
+
+        // Reset the game objects to inactive if they were active
+        winBackGrounRenderer.gameObject.SetActive(false);
+        victoryLabelRenderer.gameObject.SetActive(false);
+        starRenderer.gameObject.SetActive(false);
+        ContinueButton.gameObject.SetActive(false);
+    }
+
     public void RemoveWinUI()
     {
         Color fullTransparent = new Color(1, 1, 1, 0); // Fully transparent color
@@ -240,8 +267,8 @@ public class UIManager : MonoBehaviour
 
                 victoryLabelRenderer.transform.DOMoveY(completedLabelPosition.y + 8, 0.4f).
             OnComplete(() =>
-            { 
-                starRenderer.transform.DOMoveY(winStarPosition.y + 8, 1f).SetEase(Ease.InQuad);
+            {
+                starRenderer.transform.DOMoveY(winStarPosition.y + 8, .3f).SetEase(Ease.InQuad);
 
                 //Bringing continue button on scene
                 ContinueButton.gameObject.SetActive(true);
@@ -251,14 +278,14 @@ public class UIManager : MonoBehaviour
                     starRenderer.gameObject.SetActive(false);
                     victoryLabelRenderer.gameObject.SetActive(false);
                     winBackGrounRenderer.gameObject.SetActive(false);
-                    
+
                 });
 
             });
             }
         );
 
-      
+
 
     }
 
