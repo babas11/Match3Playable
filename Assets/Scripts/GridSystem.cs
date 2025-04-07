@@ -7,12 +7,13 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
 {
     Vector2Int gridSize;
     public Vector2Int Dimensions => gridSize;
+    public int GridCapacity => gridSize.x * gridSize.y;
 
     T[,] gridArray;
 
     
 
-    public void CreateGrid(/* Vector2Int gridSize */)
+    public void CreateGrid()
     {
         gridSize = SetGridSize();
 
@@ -134,6 +135,8 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
     }
 
     public void ChangeItemsAt(Vector2Int position1, Vector2Int position2){
+        
+        
         if (!IsInsideGrid(position1)){Debug.LogError($"{position1} is outside of the grid");}
         if (!IsInsideGrid(position2)){Debug.LogError($"{position2} is outside of the grid");}
 

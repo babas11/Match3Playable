@@ -9,7 +9,6 @@ public class Interactable : MonoBehaviour
     [SerializeField]
     public int id; //{ get; private set; }
 
-
     public Vector2Int matrixPosition = new Vector2Int(-1, -1); //{ get;set; }
     SpriteRenderer spriteRenderer;
 
@@ -18,8 +17,6 @@ public class Interactable : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        
-        //(-1, -1) assigned default matrixPosition
         matrixPosition = new Vector2Int(-1, -1);
     }
 
@@ -62,6 +59,11 @@ public class Interactable : MonoBehaviour
             InteractableSelector.instance.SelectSecond(this);
         }
 
+    }
+
+    public override string ToString()
+    {
+        return $"interactable id: {id}, matrix position: {matrixPosition}";
     }
 
 

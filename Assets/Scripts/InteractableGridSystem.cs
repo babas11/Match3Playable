@@ -23,6 +23,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
     private float spinSpeedBottomLimit = 10f;
     private float deceleration = 1f;
+    private int minimumAmountOfEachType = 3;
 
     private enum SpinState
     {
@@ -42,11 +43,14 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
         if (!interactablePool.Ready)
         {
-            interactablePool.InitializePool(Dimensions);
+            interactablePool.InitializePoolForGrid(Dimensions);
         }
 
         GetComponent<GridPlacer>().PlaceGrid();
-        FillGrid();
+
+        List<Interactable> interactablesToFill = interactablePool.CreateInteractablesWithMinimumTypesAndRandomFill(minimumAmountOfEachType, GridCapacity);
+
+        FillGrid(interactablesToFill);
         spinCoroutines = new Coroutine[Dimensions.x];
 
         columnSpinStates = new SpinState[Dimensions.x];
@@ -58,32 +62,39 @@ public class InteractableGridSystem : GridSystem<Interactable>
         }
     }
 
-    public void FillGrid()
+    public void FillGrid(List<Interactable> interactables)
     {
+        int index = 0;
         Vector3 startPosition = transform.position;
         for (int x = 0; x < Dimensions.x; x++)
         {
             startPosition.y = transform.position.y;
             for (int y = 0; y < Dimensions.y; y++)
             {
-                Interactable interactable = interactablePool.GetObjectFromPool();
+                if (index >= interactables.Count)
+                {
+                    Debug.LogError("Not enough interactables in the list to fill the grid.");
+                    continue;
+                }
+                Interactable interactable = interactables[index];
                 if (interactable == null)
                 {
                     Debug.LogError("Interactable is null. Pool may not be properly initialized.");
-                    continue; // Skip this iteration or handle accordingly
+                    continue;
                 }
 
-                interactablePool.SetInteractable(interactable);
                 interactable.matrixPosition = new Vector2Int(x, y);
                 PutItemOnGrid(interactable, new Vector2Int(x, y));
                 interactable.transform.position = new Vector3(startPosition.x, startPosition.y, 0);
                 interactable.gameObject.SetActive(true);
                 startPosition.y += gridSpacing;
-                while (IsThereAnyMatch(interactable))
+                index++;
+               /*  while (IsThereAnyMatch(interactable))
                 {
                     interactablePool.ChangeInteractable(interactable);
-                }
+                } */
             }
+
             startPosition.x += gridSpacing;
         }
     }
@@ -268,9 +279,6 @@ public class InteractableGridSystem : GridSystem<Interactable>
             {
                 PutItemOnGrid(interactable, interactable.matrixPosition);
             }
-
-            // Update world position if the column has stopped spinning
-
         }
 
         // After updating positions, check for matches and adjust spin state
@@ -284,7 +292,6 @@ public class InteractableGridSystem : GridSystem<Interactable>
             {
                 // Match found with left column, continue spinning
                 Debug.Log($"Column {columnIndex}: Match found with left column. Continuing spin.");
-                //currentSpinSpeeds[columnIndex] = currentSpinSpeed; // Reset spin speed to initial value
                 columnSpinStates[columnIndex] = SpinState.Decelerating;
             }
             else
@@ -378,7 +385,6 @@ public class InteractableGridSystem : GridSystem<Interactable>
                     if (currentSpinSpeeds[columnIndex] <= spinSpeedBottomLimit)
                     {
                         currentSpinSpeeds[columnIndex] = spinSpeedBottomLimit;
-                        //columnSpinStates[columnIndex] = SpinState.Idle;
                     }
                 }
             }
@@ -421,17 +427,17 @@ public class InteractableGridSystem : GridSystem<Interactable>
             // In order to avoid it, set the new element to the next id if there is a match.
             if (interactablesOfColumn.First().id == interactablesOfColumn.Last().id)
             {
-                interactablePool.SetToNextInteractable(extraElement);
+                interactablePool.CycleInteractableType(extraElement);
             }
             else
             {
-                interactablePool.SetInteractable(extraElement, interactablesOfColumn.First().id);
+                interactablePool.AssignTypeToInteractable(extraElement, interactablesOfColumn.First().id);
             }
         }
         else
         {
             // Handle the case when 'interactablesOfColumn' is empty or has null entries
-            interactablePool.SetInteractable(extraElement);
+            interactablePool.AssignRandomTypeToInteractable(extraElement);
         }
 
         extraElement.gameObject.SetActive(true);

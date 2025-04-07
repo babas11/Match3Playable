@@ -44,6 +44,7 @@ public abstract class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
         {
             if (!pool[i].gameObject.activeInHierarchy)
             {
+                pool[i].gameObject.SetActive(true);
                 return pool[i].GetComponent<T>();
             }
         }
@@ -55,6 +56,26 @@ public abstract class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
         poolElement.SetActive(true);
         return poolElement.GetComponent<T>();
     }
+
+    public List<T> GetObjectsFromPool(int count)
+{
+    List<T> objects = new List<T>(count);
+
+    for (int i = 0; i < count; i++)
+    {
+        T obj = GetObjectFromPool();
+        if (obj != null)
+        {
+            objects.Add(obj);
+        }
+        else
+        {
+            Debug.LogError("Failed to retrieve object from pool.");
+        }
+    }
+
+    return objects;
+}
 
     public void ReturnObjectToPool(T objectToReturn)
     {

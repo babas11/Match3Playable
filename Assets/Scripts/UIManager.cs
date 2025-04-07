@@ -92,7 +92,6 @@ public class UIManager : MonoBehaviour
     public void ActivateSpinButton(bool activate)
     {
         SpinButton.SetButtonActive(activate);
-
     }
 
     public void ChangeButtonImage(bool isSpinning)
@@ -288,9 +287,7 @@ public class UIManager : MonoBehaviour
 
 
     }
-
-
-
+    
     SpriteRenderer SetUpSprite(Sprite sprite, Vector3 position, Vector3 localScale, bool isActive, int sordingOrder, Color color)
     {
         GameObject newSprite = new GameObject();
