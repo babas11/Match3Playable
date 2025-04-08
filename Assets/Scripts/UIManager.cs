@@ -1,8 +1,6 @@
-using System;
-using System.Collections;
-using System.Linq;
-using System.Numerics;
 using DG.Tweening;
+using Signals;
+using UI;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -12,13 +10,12 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     GameObject buttonPrefab;
 
-    public ButtonManager SpinButton { get; private set; }
-    public ButtonManager ContinueButton { get; private set; }
-    public ButtonManager ReTryButton { get; private set; }
+    public CustomButton CustomButton { get; private set; }
+    public CustomButton ContinueCustomButton { get; private set; }
+    public CustomButton ReTryCustomButton { get; private set; }
 
     [SerializeField]
     float spinButtonBottomDistance;
-    public int moveCount { get; private set; }
 
     public static UIManager Instance;
 
@@ -40,12 +37,31 @@ public class UIManager : MonoBehaviour
             Debug.LogWarning("An instance of" + typeof(UIManager) + "already exist in the scene. Self destructing");
             Destroy(gameObject);
         }
+
+        InitUI();
+    }
+
+    private void OnEnable()
+    {
+        GameSignals.Instance.onGameInitialize += InitUI;
+        GameSignals.Instance.onReadyToSpin += RevealSpinButton;
+        
+    }
+
+    private void OnDisable()
+    {
+        GameSignals.Instance.onGameInitialize -= InitUI;
+        GameSignals.Instance.onReadyToSpin -= RevealSpinButton;
+        CustomButton.onButtonDown.RemoveListener(() => GameSignals.Instance.onSpinButtonPressed?.Invoke());
+        ContinueCustomButton.onButtonDown.RemoveListener(() => GameSignals.Instance.onContinueButtonPressed?.Invoke());
     }
 
     public void InitUI()
     {
         CreateSpinButton();
         CreateWonPopUp();
+        CustomButton.onButtonDown.AddListener(() => GameSignals.Instance.onSpinButtonPressed?.Invoke());
+        ContinueCustomButton.onButtonDown.AddListener(() => GameSignals.Instance.onContinueButtonPressed?.Invoke());
     }
 
 
@@ -63,63 +79,54 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     float buttonOffScreenDistance = 8f;
 
+    private void CreateSpinButton()
+    {
+        GameObject buttonGO = Instantiate(buttonPrefab);
+        CustomButton = buttonGO.GetComponent<CustomButton>();
+        CustomButton.SetUpButton(spinButtonScale, buttonStartImage, 1, true);
+        CustomButton.SetButtonAnimation(spinButtonAnimationMaxScale);
+        PositionSpinButtonOnCenterOfTheScreen(CustomButton.transform, spinButtonBottomDistance - buttonOffScreenDistance);
+    }
     private void PositionSpinButtonOnCenterOfTheScreen(Transform objectTransform, float distanceFromScreenBottom)
     {
         // Get the screen center in world units
         Vector3 bottomLeft = GetBottomLeft();
         Vector3 topRight = GetTopRight();
-
         // Calculate the center x position
         float buttonXPosition = (topRight.x + bottomLeft.x) / 2f; // Correctly centers the button
-
         // Set the vertical position relative to the bottom of the screen
         float buttonYPosition = bottomLeft.y + distanceFromScreenBottom;
-
         // Set the position of the button
         objectTransform.position = new Vector3(buttonXPosition, buttonYPosition, 0f);
     }
-
-    void CreateSpinButton()
-    {
-        GameObject buttonGO = Instantiate(buttonPrefab);
-        SpinButton = buttonGO.GetComponent<ButtonManager>();
-        SpinButton.SetUpButton(spinButtonScale, buttonStartImage, 1, true);
-        SpinButton.SetButtonAnimation(spinButtonAnimationMaxScale);
-
-        PositionSpinButtonOnCenterOfTheScreen(SpinButton.transform, spinButtonBottomDistance - buttonOffScreenDistance);
-    }
-
+    
     public void ActivateSpinButton(bool activate)
     {
-        SpinButton.SetButtonActive(activate);
+        CustomButton.SetButtonActive(activate);
     }
-
     public void ChangeButtonImage(bool isSpinning)
     {
         Sprite sprite = isSpinning ? buttonStartImage : buttonStopImage;
-        SpinButton.ChangeButtonImage(sprite);
+        CustomButton.ChangeButtonImage(sprite);
     }
-
-
     public void RemoveSpinButton()
     {
         ActivateSpinButton(false);
-        Vector3 startPos = SpinButton.transform.position;
+        Vector3 startPos = CustomButton.transform.position;
         Vector3 offScreenY = startPos - Vector3.down * 2;
-        Vector3 startScale = SpinButton.transform.localScale;
-        SpinButton.transform.DOScale(spinButtonAnimationMaxScale, 0.1f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
-        SpinButton.transform.DOMoveY(-buttonOffScreenDistance, .2f));
-
+        Vector3 startScale = CustomButton.transform.localScale;
+        CustomButton.transform.DOScale(spinButtonAnimationMaxScale, 0.1f).SetLoops(2, LoopType.Yoyo).OnComplete(() =>
+        CustomButton.transform.DOMoveY(-buttonOffScreenDistance, .2f));
     }
     public void RevealSpinButton()
     {
-        Vector3 startPos = SpinButton.transform.position;
+        Vector3 startPos = CustomButton.transform.position;
         Vector3 offScreenY = startPos - Vector3.down * 2;
         ChangeButtonImage(true);
         ActivateSpinButton(true);
-        SpinButton.transform.DOMoveY(GetBottomLeft().y + spinButtonBottomDistance, 1f)
+        CustomButton.transform.DOMoveY(GetBottomLeft().y + spinButtonBottomDistance, 1f)
                             .OnComplete(() =>
-        SpinButton.transform.DOScale(spinButtonAnimationMaxScale, 0.4f).SetLoops(2, LoopType.Yoyo));
+        CustomButton.transform.DOScale(spinButtonAnimationMaxScale, 0.4f).SetLoops(2, LoopType.Yoyo));
     }
     #endregion
 
@@ -178,9 +185,9 @@ public class UIManager : MonoBehaviour
         victoryLabelRenderer = SetUpSprite(completedLabelSprite, completedLabelPosition, completedLabelScale, false, 6, defaultColor);
         transparentRenderer = SetUpSprite(victoryBackSprite, GetCenter(), transsparentScale, true, 3, new Color(1, 1, 1, 0));
         //Create Continue Button
-        ContinueButton = Instantiate(buttonPrefab).GetComponent<ButtonManager>();
-        ContinueButton.SetUpButton(continuePosition, continueLabelScale, continueSprite, 6, true, false);
-        ContinueButton.SetButtonAnimation(new Vector3(0.5f, 0.5f, 0.5f));
+        ContinueCustomButton = Instantiate(buttonPrefab).GetComponent<CustomButton>();
+        ContinueCustomButton.SetUpButton(continuePosition, continueLabelScale, continueSprite, 6, true, false);
+        ContinueCustomButton.SetButtonAnimation(new Vector3(0.5f, 0.5f, 0.5f));
     }
 
 
@@ -217,8 +224,8 @@ public class UIManager : MonoBehaviour
                     starRenderer.transform.DOScale(Vector3.one, 0.6f);
 
                     //Bringing continue button on scene
-                    ContinueButton.gameObject.SetActive(true);
-                    ContinueButton.transform.DOMoveY(completedLabelPosition.y - 8, 0.8f).From();
+                    ContinueCustomButton.gameObject.SetActive(true);
+                    ContinueCustomButton.transform.DOMoveY(completedLabelPosition.y - 8, 0.8f).From();
 
                 });
                 //Making star a jump animation after labels animation
@@ -238,19 +245,19 @@ public class UIManager : MonoBehaviour
         winBackGrounRenderer.transform.position = victoryBackPosition;
         victoryLabelRenderer.transform.position = completedLabelPosition;
         starRenderer.transform.position = winStarPosition + new Vector3(-8, 0, 1); // Corrected the Y component
-        ContinueButton.transform.position = continuePosition;
+        ContinueCustomButton.transform.position = continuePosition;
 
         // Reset scales
         winBackGrounRenderer.transform.localScale = victoryBackScale;
         victoryLabelRenderer.transform.localScale = completedLabelScale;
         starRenderer.transform.localScale = winStarScale;
-        ContinueButton.transform.localScale = continueLabelScale;
+        ContinueCustomButton.transform.localScale = continueLabelScale;
 
         // Reset the game objects to inactive if they were active
         winBackGrounRenderer.gameObject.SetActive(false);
         victoryLabelRenderer.gameObject.SetActive(false);
         starRenderer.gameObject.SetActive(false);
-        ContinueButton.gameObject.SetActive(false);
+        ContinueCustomButton.gameObject.SetActive(false);
     }
 
     public void RemoveWinUI()
@@ -270,10 +277,10 @@ public class UIManager : MonoBehaviour
                 starRenderer.transform.DOMoveY(winStarPosition.y + 8, .3f).SetEase(Ease.InQuad);
 
                 //Bringing continue button on scene
-                ContinueButton.gameObject.SetActive(true);
-                ContinueButton.transform.DOMoveY(completedLabelPosition.y - 8, 0.8f).OnComplete(() =>
+                ContinueCustomButton.gameObject.SetActive(true);
+                ContinueCustomButton.transform.DOMoveY(completedLabelPosition.y - 8, 0.8f).OnComplete(() =>
                 {
-                    ContinueButton.gameObject.SetActive(false);
+                    ContinueCustomButton.gameObject.SetActive(false);
                     starRenderer.gameObject.SetActive(false);
                     victoryLabelRenderer.gameObject.SetActive(false);
                     winBackGrounRenderer.gameObject.SetActive(false);

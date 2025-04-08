@@ -10,7 +10,7 @@ public abstract class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour
     [SerializeField]
     int poolSize;
 
-    protected List<T> pool;
+    public List<T> pool { get; private set; }
 
     public void CreatePool(int amount = 0)
     {

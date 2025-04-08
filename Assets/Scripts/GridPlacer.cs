@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 
-[RequireComponent(typeof(InteractableGridSystem))]
 public class GridPlacer : MonoBehaviour
 {
     private void Awake()
@@ -49,9 +48,7 @@ public class GridPlacer : MonoBehaviour
         // Set the background size
         SpriteRenderer bgRenderer = backGround.GetComponent<SpriteRenderer>();
         bgRenderer.size = new Vector2(backgroundWidth, backgroundHeight);
-
         
-
         // Calculate the background position
         Vector3 gridCenter = transform.position + new Vector3(GridWidth / 2f, GridHeight / 2f, 0f);
 

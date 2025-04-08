@@ -1,4 +1,5 @@
 using System;
+using Signals;
 using UnityEngine;
 
 public class InteractableSelector : MonoBehaviour
@@ -22,9 +23,9 @@ public class InteractableSelector : MonoBehaviour
         selected = new Interactable[2];
     }
 
-    private void Start() 
+    private void Start()
     {
-        grid = GetComponent<InteractableGridSystem>();
+        grid = GameSignals.Instance.onGetGrid?.Invoke();
     }
 
     public void SelectFirst(Interactable toMatch)
@@ -42,14 +43,10 @@ public class InteractableSelector : MonoBehaviour
         if(!enabled || selected[0] == null || selected[1] == null || !selected[0].Idle || !selected[1].Idle) return;
 
         if(IsSelectedInteractablesAdjacent()){
-            StartCoroutine(grid.Swap(selected));
+            //StartCoroutine(grid.Swap(selected));
             print($"Swapping interactables at positions : ( {selected[0].matrixPosition.x},{selected[0].matrixPosition.y} and {selected[1].matrixPosition.x},{selected[1].matrixPosition.y})");
         }
-
-        
-
         SelectFirst(null);
-
     }
 
     bool IsSelectedInteractablesAdjacent(){

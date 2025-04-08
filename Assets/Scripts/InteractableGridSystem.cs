@@ -3,12 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using Enums;
+using Signals;
 using UnityEngine;
 
 public class InteractableGridSystem : GridSystem<Interactable>
 {
     [SerializeField]
-    public InteractablePool interactablePool;
+    //public InteractablePool interactablePool;
 
     Coroutine[] spinCoroutines;
 
@@ -25,88 +27,23 @@ public class InteractableGridSystem : GridSystem<Interactable>
     private float deceleration = 1f;
     private int minimumAmountOfEachType = 3;
 
-    private enum SpinState
-    {
-        Idle,
-        Spinning,
-        Decelerating
-    }
+    
 
     private SpinState[] columnSpinStates;
     private float[] currentSpinSpeeds;
 
     private SpinState spinState = SpinState.Idle;
 
-    public void SetUpGrid()
-    {
-        CreateGrid();
+   
 
-        if (!interactablePool.Ready)
-        {
-            interactablePool.InitializePoolForGrid(Dimensions);
-        }
-
-        GetComponent<GridPlacer>().PlaceGrid();
-
-        List<Interactable> interactablesToFill = interactablePool.CreateInteractablesWithMinimumTypesAndRandomFill(minimumAmountOfEachType, GridCapacity);
-
-        FillGrid(interactablesToFill);
-        spinCoroutines = new Coroutine[Dimensions.x];
-
-        columnSpinStates = new SpinState[Dimensions.x];
-        currentSpinSpeeds = new float[Dimensions.x];
-        for (int i = 0; i < Dimensions.x; i++)
-        {
-            columnSpinStates[i] = SpinState.Idle;
-            currentSpinSpeeds[i] = currentSpinSpeed;
-        }
-    }
-
-    public void FillGrid(List<Interactable> interactables)
-    {
-        int index = 0;
-        Vector3 startPosition = transform.position;
-        for (int x = 0; x < Dimensions.x; x++)
-        {
-            startPosition.y = transform.position.y;
-            for (int y = 0; y < Dimensions.y; y++)
-            {
-                if (index >= interactables.Count)
-                {
-                    Debug.LogError("Not enough interactables in the list to fill the grid.");
-                    continue;
-                }
-                Interactable interactable = interactables[index];
-                if (interactable == null)
-                {
-                    Debug.LogError("Interactable is null. Pool may not be properly initialized.");
-                    continue;
-                }
-
-                interactable.matrixPosition = new Vector2Int(x, y);
-                PutItemOnGrid(interactable, new Vector2Int(x, y));
-                interactable.transform.position = new Vector3(startPosition.x, startPosition.y, 0);
-                interactable.gameObject.SetActive(true);
-                startPosition.y += gridSpacing;
-                index++;
-               /*  while (IsThereAnyMatch(interactable))
-                {
-                    interactablePool.ChangeInteractable(interactable);
-                } */
-            }
-
-            startPosition.x += gridSpacing;
-        }
-    }
-
-    public void ClearGrid()
+    /*public void ClearGrid()
     {
         StopAllCoroutines();
-        Clear();
-        interactablePool.ClearPool();
-    }
+        ClerGrid();
+        GameSignals.Instance.onClearPool?.Invoke();
+    }*/
 
-    int CheckDirection(Vector2Int direction, Interactable interactable)
+    /*private int CheckDirection(Vector2Int direction, Interactable interactable)
     {
         int matches = 0;
         Vector2Int position = direction + interactable.matrixPosition;
@@ -121,11 +58,9 @@ public class InteractableGridSystem : GridSystem<Interactable>
         }
 
         return matches;
-    }
-
-
-
-    private bool IsThereAnyMatch(Interactable interactableToCheck, bool checkForHorizontal = true, bool checkForVertical = true)
+    }*/
+    
+    /*private bool IsThereAnyMatch(Interactable interactableToCheck, bool checkForHorizontal = true, bool checkForVertical = true)
     {
         if (checkForHorizontal)
         {
@@ -159,178 +94,18 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
         return false;
 
-    }
-
-
-
-
-    #region Spin Mechanics
-
-    public void StartSpin()
-    {
-
-
-        switch (GameManager.State)
-        {
-            case GameStates.SpinActive:
-            case GameStates.GameStart:
-
-                GameManager.Instance.UpdateGameState(GameStates.Spinning);
-                StartCoroutine(SpinColumns());
-                break;
-            case GameStates.Spinning:
-                StartCoroutine(DecelerateColumns());
-                break;
-        }
-    }
-
-
-    IEnumerator DecelerateColumns()
-    {
-        UIManager.Instance.ActivateSpinButton(false);
-        for (int i = 0; i < Dimensions.x; i++)
-        {
-            columnSpinStates[i] = SpinState.Decelerating;
-
-            yield return new WaitForSeconds(0.3f);
-        }
-    }
-
-    IEnumerator SpinColumns()
-    {
-        for (int i = 0; i < Dimensions.x; i++)
-        {
-            currentSpinSpeeds[i] = currentSpinSpeed;
-            columnSpinStates[i] = SpinState.Idle;
-        }
-        for (int i = 0; i < Dimensions.x; i++)
-        {
-            columnSpinStates[i] = SpinState.Spinning;
-            SpinColumn(i);
-            yield return new WaitForSeconds(0.15f);
-        }
-    }
-
-
-
-    void SpinColumn(int columnIndex)
-    {
-
-        List<Interactable> column = GetColumn(columnIndex);
-
-        spinCoroutines[columnIndex] = StartCoroutine(SpinColumn(column, columnIndex));
-    }
-
-    IEnumerator SpinColumn(List<Interactable> interactablesOfColumn, int columnIndex)
-    {
-        AddExtraElementOnTop(interactablesOfColumn, columnIndex);
-
-        List<Interactable> interactablesToRemove = new List<Interactable>();
-
-        while (columnSpinStates[columnIndex] == SpinState.Spinning || columnSpinStates[columnIndex] == SpinState.Decelerating)
-        {
-            Dictionary<Interactable, Vector3> targetPositions = SetTargetPositions(interactablesOfColumn);
-
-            yield return StartCoroutine(MoveInteractablesToTarget(interactablesOfColumn, targetPositions, columnIndex));
-
-            SetPositions(interactablesOfColumn, columnIndex, interactablesToRemove);
-
-            RemoveOutGridInteractable(interactablesOfColumn, interactablesToRemove);
-
-            if (columnSpinStates[columnIndex] != SpinState.Idle)
-            {
-                AddExtraElementOnTop(interactablesOfColumn, columnIndex);
-            }
-        }
-    }
-
-    private void RemoveOutGridInteractable(List<Interactable> interactablesOfColumn, List<Interactable> interactablesToRemove)
-    {
-        foreach (var interactable in interactablesToRemove)
-        {
-            interactable.matrixPosition = new Vector2Int(-1, -1);
-            interactablesOfColumn.Remove(interactable);
-            interactablePool.ReturnObjectToPool(interactable);
-        }
-        interactablesToRemove.Clear();
-    }
-
-    private void SetPositions(List<Interactable> interactablesOfColumn, int columnIndex, List<Interactable> interactablesToRemove)
-    {
-        foreach (var interactable in interactablesOfColumn.ToList())
-        {
-            Vector2Int currentGridPosition = interactable.matrixPosition;
-
-            if (currentGridPosition == new Vector2Int(columnIndex, 0))
-            {
-                interactablesToRemove.Add(interactable);
-                RemoveItemFromGrid(currentGridPosition);
-                continue;
-            }
-
-            if (currentGridPosition != new Vector2Int(-1, -1))
-                RemoveItemFromGrid(currentGridPosition);
-
-            // Update matrix position
-            SetMatrixPosition(columnIndex, interactable, currentGridPosition);
-
-            // Add interactable to new grid position
-            if (IsInsideGrid(interactable.matrixPosition))
-            {
-                PutItemOnGrid(interactable, interactable.matrixPosition);
-            }
-        }
-
-        // After updating positions, check for matches and adjust spin state
-        if (currentSpinSpeeds[columnIndex] <= spinSpeedBottomLimit)
-        {
-            List<Interactable> interactablesToCheck = interactablesOfColumn
-                .Where(x => !interactablesToRemove.Contains(x))
-                .ToList();
-
-            if (AnyMatchWithLeftColumn(interactablesToCheck))
-            {
-                // Match found with left column, continue spinning
-                Debug.Log($"Column {columnIndex}: Match found with left column. Continuing spin.");
-                columnSpinStates[columnIndex] = SpinState.Decelerating;
-            }
-            else
-            {
-                if (columnIndex == 0)
-                {
-                    Debug.Log($"Column {columnIndex}: Stopping spin.");
-                    columnSpinStates[columnIndex] = SpinState.Idle;
-
-                }
-                else if (columnSpinStates[columnIndex - 1] == SpinState.Idle)
-                {
-                    Debug.Log($"Column {columnIndex}: No Match, Stopping spin.");
-                    columnSpinStates[columnIndex] = SpinState.Idle;
-                    if (columnIndex == Dimensions.x - 1)
-                    {
-                        print("UpdateSpin");
-                        GameManager.Instance.UpdateGameState(GameStates.SpinActive);
-                    }
-                }
-            }
-
-            if (columnSpinStates[columnIndex] == SpinState.Idle)
-            {
-                SetWorldPositions(columnIndex, interactablesToCheck);
-            }
-        }
-    }
-
-    private void SetWorldPositions(int columnIndex, List<Interactable> interactables)
+    }*/
+    
+    public void SetWorldPositions(int columnIndex, List<Interactable> interactables,Transform transform)
     {
         foreach (var interactable in interactables)
         {
-            interactable.transform.position = GridPositionToWorldPosition(interactable.matrixPosition);
+            interactable.transform.position = GridPositionToWorldPosition(interactable.matrixPosition,transform);
 
         }
     }
 
-    private void SetMatrixPosition(int columnIndex, Interactable interactable, Vector2Int currentGridPosition)
+    public void SetMatrixPosition(int columnIndex, Interactable interactable, Vector2Int currentGridPosition)
     {
         if (currentGridPosition == new Vector2Int(-1, -1))
         {
@@ -343,8 +118,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
 
         }
     }
-
-    private bool AnyMatchWithLeftColumn(List<Interactable> interactablesToCheck)
+    public bool AnyMatchWithLeftColumn(List<Interactable> interactablesToCheck)
     {
         foreach (var interactableToCheck in interactablesToCheck)
         {
@@ -362,96 +136,11 @@ public class InteractableGridSystem : GridSystem<Interactable>
         }
         return false;
     }
-
-    IEnumerator MoveInteractablesToTarget(List<Interactable> interactablesOfColumn, Dictionary<Interactable, Vector3> targetPositions, int columnIndex)
-    {
-        bool allReachedTarget = false;
-        while (!allReachedTarget)
-        {
-            allReachedTarget = true;
-            foreach (var interactable in interactablesOfColumn)
-            {
-                Vector3 targetPosition = targetPositions[interactable];
-                interactable.transform.position = Vector3.MoveTowards(interactable.transform.position, targetPosition, currentSpinSpeeds[columnIndex] * Time.deltaTime);
-
-                if (Vector3.Distance(interactable.transform.position, targetPosition) >= 0.01f)
-                {
-                    allReachedTarget = false;
-                }
-
-                if (columnSpinStates[columnIndex] == SpinState.Decelerating)
-                {
-                    currentSpinSpeeds[columnIndex] -= deceleration * Time.deltaTime;
-                    if (currentSpinSpeeds[columnIndex] <= spinSpeedBottomLimit)
-                    {
-                        currentSpinSpeeds[columnIndex] = spinSpeedBottomLimit;
-                    }
-                }
-            }
-
-            yield return null;
-        }
-    }
-
-    private Dictionary<Interactable, Vector3> SetTargetPositions(List<Interactable> interactablesOfColumn)
-    {
-        Dictionary<Interactable, Vector3> targetPositions = new Dictionary<Interactable, Vector3>();
-
-        foreach (var interactable in interactablesOfColumn)
-        {
-            if (interactable == null)
-            {
-                Debug.LogWarning("Interactable is null in SetTargetPositions.");
-                continue;
-            }
-            Vector3 targetPosition = interactable.transform.position - new Vector3(0, gridSpacing, 0);
-            targetPositions[interactable] = targetPosition;
-        }
-
-        return targetPositions;
-    }
-
-    private void AddExtraElementOnTop(List<Interactable> interactablesOfColumn, int columnIndex)
-    {
-        var extraElement = interactablePool.GetObjectFromPool();
-
-        if (extraElement == null)
-        {
-            Debug.LogError("Extra element is null. Pool may not be properly initialized.");
-            return; // Handle this case appropriately
-        }
-
-        if (interactablesOfColumn.Count > 0 && interactablesOfColumn.First() != null && interactablesOfColumn.Last() != null)
-        {
-            // If the bottom and top element of the column are the same, they come together.
-            // In order to avoid it, set the new element to the next id if there is a match.
-            if (interactablesOfColumn.First().id == interactablesOfColumn.Last().id)
-            {
-                interactablePool.CycleInteractableType(extraElement);
-            }
-            else
-            {
-                interactablePool.AssignTypeToInteractable(extraElement, interactablesOfColumn.First().id);
-            }
-        }
-        else
-        {
-            // Handle the case when 'interactablesOfColumn' is empty or has null entries
-            interactablePool.AssignRandomTypeToInteractable(extraElement);
-        }
-
-        extraElement.gameObject.SetActive(true);
-        extraElement.transform.position = GridPositionToWorldPosition(new Vector2Int(columnIndex, Dimensions.y - 1)) + new Vector3(0, gridSpacing, 0);
-
-        interactablesOfColumn.Add(extraElement);
-    }
-
-
-    #endregion
-
+    
+    
     #region Swap Mechanics
 
-    public IEnumerator Swap(Interactable[] interactables)
+    /*public IEnumerator Swap(Interactable[] interactables)
     {
         Interactable[] copies = new Interactable[2];
         copies[0] = interactables[0];
@@ -483,7 +172,7 @@ public class InteractableGridSystem : GridSystem<Interactable>
             GameManager.Instance.UpdateGameState(GameStates.Won);
         }
 
-    }
+    }*/
 
     private List<Interactable> GetMatchesInDirection(Interactable toMatch, Vector2Int direction)
     {
@@ -546,7 +235,6 @@ public class InteractableGridSystem : GridSystem<Interactable>
         Interactable interactable0 = interactables[0];
         Interactable interactable1 = interactables[1];
 
-        print("animating");
         Vector3[] targetPositions = new Vector3[2];
         targetPositions[0] = interactable1.transform.position;
         targetPositions[1] = interactable0.transform.position;

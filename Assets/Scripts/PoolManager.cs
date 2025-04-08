@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Signals;
 using UnityEngine;
 
-public class InteractablePool : ObjectPool<Interactable>
+public class PoolManager : ObjectPool<Interactable>
 {
+    
     [SerializeField] Sprite[] interactableSprites;
-
     [SerializeField] int howManyInteractables;
-
     SpriteMask spriteMask;
 
     public bool Ready { get; private set; } = false;
@@ -18,6 +18,31 @@ public class InteractablePool : ObjectPool<Interactable>
     private void Awake()
     {
         spriteMask = GetComponent<SpriteMask>();
+    }
+    
+    void OnEnable()
+    {
+        GameSignals.Instance.onGridInitialize += InitializePoolForGrid;
+        GameSignals.Instance.onGetStartInteractables += CreateInteractablesWithMinimumTypesAndRandomFill;
+        GameSignals.Instance.onGetInteractable += GetObjectFromPool;
+        GameSignals.Instance.onCycleInteractableType += CycleInteractableType;
+        GameSignals.Instance.onAssignRandomTypeToInteractable += AssignRandomTypeToInteractable;
+        GameSignals.Instance.onAssignTypeToInteractable += AssignTypeToInteractable;
+        GameSignals.Instance.onObjectReturnToPool += ReturnObjectToPool;
+        GameSignals.Instance.onClearPool += ClearPool;
+
+    }
+
+    private void OnDisable()
+    { 
+        GameSignals.Instance.onGridInitialize -= InitializePoolForGrid;
+        GameSignals.Instance.onGetStartInteractables -= CreateInteractablesWithMinimumTypesAndRandomFill;
+        GameSignals.Instance.onGetInteractable -= GetObjectFromPool;
+        GameSignals.Instance.onCycleInteractableType -= CycleInteractableType;
+        GameSignals.Instance.onAssignRandomTypeToInteractable -= AssignRandomTypeToInteractable;
+        GameSignals.Instance.onAssignTypeToInteractable -= AssignTypeToInteractable;
+        GameSignals.Instance.onObjectReturnToPool += ReturnObjectToPool;
+        GameSignals.Instance.onClearPool -= ClearPool;
     }
 
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
+public abstract class GridSystem<T>  where T : MonoBehaviour
 {
     Vector2Int gridSize;
     public Vector2Int Dimensions => gridSize;
@@ -104,11 +104,11 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
 
     }
 
-    public Vector3 GridPositionToWorldPosition(Vector2Int position)
+    public Vector3 GridPositionToWorldPosition(Vector2Int position,Transform gridTransform)
     {
-        float xPosition = transform.position.x + position.x * 0.6f;
+        float xPosition = gridTransform.position.x + position.x * 0.6f;
 
-        float yPosition = transform.position.y + position.y * 0.6f;
+        float yPosition = gridTransform.position.y + position.y * 0.6f;
 
         return new Vector3(xPosition, yPosition, 0);
     }
@@ -134,22 +134,18 @@ public abstract class GridSystem<T> : MonoBehaviour where T : MonoBehaviour
 
     }
 
-    public void ChangeItemsAt(Vector2Int position1, Vector2Int position2){
-        
-        
+    public void ChangeItemsAt(Vector2Int position1, Vector2Int position2)
+    {
         if (!IsInsideGrid(position1)){Debug.LogError($"{position1} is outside of the grid");}
         if (!IsInsideGrid(position2)){Debug.LogError($"{position2} is outside of the grid");}
-
-
-
+        
         T temp = gridArray[position1.x,position1.y];
 
         gridArray[position1.x,position1.y] = gridArray[position2.x,position2.y];
         gridArray[position2.x,position2.y] = temp;
     }
 
-    public void Clear(){
+    public void ClearGrid(){
         gridArray = null;
     }
-
 }

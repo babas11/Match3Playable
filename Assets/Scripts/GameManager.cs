@@ -1,12 +1,11 @@
 using System;
+using Signals;
 using UnityEditor.ShaderKeywordFilter;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-
-
     public static GameStates State;
 
     InteractableGridSystem grid;
@@ -24,22 +23,19 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("An instance of" + typeof(InteractableSelector) + "already exist in the scene. Self destructing");
             Destroy(gameObject);
         }
-        grid = GameObject.FindObjectOfType<InteractableGridSystem>();
+        //grid = GameObject.FindObjectOfType<InteractableGridSystem>();
         selector = GameObject.FindObjectOfType<InteractableSelector>();
         uiManager = UIManager.Instance;
-
-
-
     }
 
     private void Start()
     {
-
-        grid.SetUpGrid();
+        GameSignals.Instance.onGameInitialize?.Invoke();
+        
+        /*grid.SetUpGrid();
         uiManager.InitUI();
-        uiManager.SpinButton.onButtonDown.AddListener(() => grid.StartSpin());
-        uiManager.ContinueButton.onButtonDown.AddListener(() => RestartGame());
-
+        uiManager.SpinButton.onButtonDown.AddListener(() => grid.StartSpin());*/
+        //uiManager.ContinueButton.onButtonDown.AddListener(() => RestartGame());
         UpdateGameState(GameStates.GameStart);
     }
 
@@ -51,6 +47,7 @@ public class GameManager : MonoBehaviour
         switch (State)
         {
             case GameStates.GameStart:
+                GameSignals.Instance.onReadyToSpin?.Invoke();
                 uiManager.RevealSpinButton();
                 break;
             case GameStates.SpinActive:
@@ -68,20 +65,18 @@ public class GameManager : MonoBehaviour
                 //No grid input in this state
                 break;
             case GameStates.Won:
-                print("Won");
                 uiManager.RevealWonUI();
                 break;
         }
     }
 
     void RestartGame(){
-        uiManager.RemoveWinUI();
+        /*uiManager.RemoveWinUI();
         grid.ClearGrid();
         grid.SetUpGrid();
-        UpdateGameState(GameStates.GameStart);
+        UpdateGameState(GameStates.GameStart);*/
     }
-
-
+    
 }
 public enum GameStates
 {
