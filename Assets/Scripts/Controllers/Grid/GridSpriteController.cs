@@ -23,9 +23,10 @@ namespace Controllers.Grid
         
         #endregion
         
-        public void SetRendererData(CD_Grid data,Vector2Int dimensions)
+        public void SetRendererData(Vector2Int dimensions,CD_Grid data = null)
         {
-            _data = data;
+            if( data != null)
+                _data = data;
             _dimensions = dimensions;
             _initialPosition = transform.position;
             

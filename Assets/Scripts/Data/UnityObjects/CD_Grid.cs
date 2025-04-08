@@ -7,5 +7,6 @@ namespace Data.UnityObjects
     public class CD_Grid : ScriptableObject
     {
         public GridViewData GridViewData;
+        public GridSpinData GridSpinData;
     }
 }

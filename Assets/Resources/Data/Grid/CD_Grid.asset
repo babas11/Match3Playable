@@ -17,3 +17,8 @@ MonoBehaviour:
     BackgroundOverScale: 1.1
     GridUnit: 0.6
     GridBottomOffset: 3
+    minimumAmountOfEachType: 0
+  GridSpinData:
+    currentSpinSpeed: 0
+    spinSpeedBottomLimit: 10
+    deceleration: 1

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Grid;
+using Managers;
 using UnityEngine;
 
 namespace Commands.Grid
@@ -12,7 +14,7 @@ namespace Commands.Grid
             _interactableGridSystem = interactableGridSystem;
         }
 
-        internal void Execute(List<Interactable> interactables,Vector2Int dimensions,Transform gridTransform)
+        internal void Execute(List<InteractableManager> interactables,Vector2Int dimensions,Transform gridTransform)
         {
             int index = 0;
             Vector3 startPosition = gridTransform.position;
@@ -26,17 +28,17 @@ namespace Commands.Grid
                         Debug.LogError("Not enough interactables in the list to fill the grid.");
                         continue;
                     }
-                    Interactable interactable = interactables[index];
-                    if (interactable == null)
+                    InteractableManager interactableManagerManager = interactables[index];
+                    if (interactableManagerManager == null)
                     {
                         Debug.LogError("Interactable is null. Pool may not be properly initialized.");
                         continue;
                     }
 
-                    interactable.matrixPosition = new Vector2Int(x, y);
-                    _interactableGridSystem.PutItemOnGrid(interactable, new Vector2Int(x, y));
-                    interactable.transform.position = new Vector3(startPosition.x, startPosition.y, 0);
-                    interactable.gameObject.SetActive(true);
+                    interactableManagerManager.matrixPosition = new Vector2Int(x, y);
+                    _interactableGridSystem.PutItemOnGrid(interactableManagerManager, new Vector2Int(x, y));
+                    interactableManagerManager.transform.position = new Vector3(startPosition.x, startPosition.y, 0);
+                    interactableManagerManager.gameObject.SetActive(true);
                     startPosition.y += _interactableGridSystem.GridSpacing;
                     index++;
                     /*  while (IsThereAnyMatch(interactable))

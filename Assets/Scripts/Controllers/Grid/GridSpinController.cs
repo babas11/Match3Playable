@@ -1,45 +1,50 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Data.UnityObjects;
 using Enums;
+using Grid;
+using Managers;
 using Signals;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 namespace Controllers.Grid
 {
     public class GridSpinController : MonoBehaviour
     {
-        
-        Coroutine[] spinCoroutines;
 
-        [Tooltip("Distance between each grid cell")]
-        [SerializeField]
-        private float gridSpacing = 0.6f;
-        public float GridSpacing => gridSpacing;
+        #region Self Variables
 
+        #region Private Variables
 
-        [SerializeField]
-        private float currentSpinSpeed = 10f;
-
-        private float spinSpeedBottomLimit = 10f;
-        private float deceleration = 1f;
-        private int minimumAmountOfEachType = 3;
-
+        private CD_Grid _data;
+        private Coroutine[] _spinCoroutines;
         private InteractableGridSystem _interactableGridSystem;
-        public Vector2Int Dimensions => _interactableGridSystem.Dimensions;
+        private Vector2Int Dimensions => _interactableGridSystem.Dimensions;
+        private float GridSpacing => _data.GridViewData.GridUnit;
+        
 
-        public void Init(InteractableGridSystem interactableGridSystem)
+        #endregion
+
+
+        #endregion
+        
+        
+
+        
+        
+
+        public void Init(InteractableGridSystem interactableGridSystem,CD_Grid data = null)
         {
+            if (data != null) { _data = data;}
             _interactableGridSystem = interactableGridSystem;
-            
-            spinCoroutines = new Coroutine[interactableGridSystem.Dimensions.x];
+            _spinCoroutines = new Coroutine[interactableGridSystem.Dimensions.x];
             columnSpinStates = new SpinState[interactableGridSystem.Dimensions.x];
             currentSpinSpeeds = new float[interactableGridSystem.Dimensions.x];
             for (int i = 0; i < interactableGridSystem.Dimensions.x; i++)
             {
                 columnSpinStates[i] = SpinState.Idle;
-                currentSpinSpeeds[i] = currentSpinSpeed;
+                currentSpinSpeeds[i] = _data.GridSpinData.currentSpinSpeed;
             }
         }
     
@@ -59,6 +64,7 @@ namespace Controllers.Grid
                     StartCoroutine(SpinColumns());
                     break;
                 case GameStates.Spinning:
+                    GameManager.Instance.UpdateGameState(GameStates.SpinEnd);
                     StartCoroutine(DecelerateColumns());
                     break;
             }
@@ -66,20 +72,20 @@ namespace Controllers.Grid
 
         IEnumerator DecelerateColumns()
         {
-            UIManager.Instance.ActivateSpinButton(false);
             for (int i = 0; i < Dimensions.x; i++)
             {
                 columnSpinStates[i] = SpinState.Decelerating;
 
                 yield return new WaitForSeconds(0.3f);
             }
+            
         }
 
         IEnumerator SpinColumns()
         {
             for (int i = 0; i < Dimensions.x; i++)
             {
-                currentSpinSpeeds[i] = currentSpinSpeed;
+                currentSpinSpeeds[i] = _data.GridSpinData.currentSpinSpeed;
                 columnSpinStates[i] = SpinState.Idle;
             }
 
@@ -93,21 +99,21 @@ namespace Controllers.Grid
 
         void SpinColumn(int columnIndex)
         {
-            List<Interactable> column = _interactableGridSystem.GetColumn(columnIndex);
+            List<InteractableManager> column = _interactableGridSystem.GetColumn(columnIndex);
 
-            spinCoroutines[columnIndex] = StartCoroutine(SpinColumn(column, columnIndex));
+            _spinCoroutines[columnIndex] = StartCoroutine(SpinColumn(column, columnIndex));
         }
 
-        IEnumerator SpinColumn(List<Interactable> interactablesOfColumn, int columnIndex)
+        IEnumerator SpinColumn(List<InteractableManager> interactablesOfColumn, int columnIndex)
         {
             AddExtraElementOnTop(interactablesOfColumn, columnIndex);
 
-            List<Interactable> interactablesToRemove = new List<Interactable>();
+            List<InteractableManager> interactablesToRemove = new List<InteractableManager>();
 
             while (columnSpinStates[columnIndex] == SpinState.Spinning ||
                    columnSpinStates[columnIndex] == SpinState.Decelerating)
             {
-                Dictionary<Interactable, Vector3> targetPositions = SetTargetPositions(interactablesOfColumn);
+                Dictionary<InteractableManager, Vector3> targetPositions = SetTargetPositions(interactablesOfColumn);
 
                 yield return StartCoroutine(MoveInteractablesToTarget(interactablesOfColumn, targetPositions,
                     columnIndex));
@@ -123,8 +129,8 @@ namespace Controllers.Grid
             }
         }
 
-        private void RemoveOutGridInteractable(List<Interactable> interactablesOfColumn,
-            List<Interactable> interactablesToRemove)
+        private void RemoveOutGridInteractable(List<InteractableManager> interactablesOfColumn,
+            List<InteractableManager> interactablesToRemove)
         {
             foreach (var interactable in interactablesToRemove)
             {
@@ -136,8 +142,8 @@ namespace Controllers.Grid
             interactablesToRemove.Clear();
         }
 
-        private void SetPositions(List<Interactable> interactablesOfColumn, int columnIndex,
-            List<Interactable> interactablesToRemove)
+        private void SetPositions(List<InteractableManager> interactablesOfColumn, int columnIndex,
+            List<InteractableManager> interactablesToRemove)
         {
             foreach (var interactable in interactablesOfColumn.ToList())
             {
@@ -164,9 +170,9 @@ namespace Controllers.Grid
             }
 
             // After updating positions, check for matches and adjust spin state
-            if (currentSpinSpeeds[columnIndex] <= spinSpeedBottomLimit)
+            if (currentSpinSpeeds[columnIndex] <= _data.GridSpinData.spinSpeedBottomLimit)
             {
-                List<Interactable> interactablesToCheck = interactablesOfColumn
+                List<InteractableManager> interactablesToCheck = interactablesOfColumn
                     .Where(x => !interactablesToRemove.Contains(x))
                     .ToList();
 
@@ -202,7 +208,7 @@ namespace Controllers.Grid
         }
         
         
-        IEnumerator MoveInteractablesToTarget(List<Interactable> interactablesOfColumn, Dictionary<Interactable, Vector3> targetPositions, int columnIndex)
+        IEnumerator MoveInteractablesToTarget(List<InteractableManager> interactablesOfColumn, Dictionary<InteractableManager, Vector3> targetPositions, int columnIndex)
         {
             bool allReachedTarget = false;
             while (!allReachedTarget)
@@ -220,10 +226,10 @@ namespace Controllers.Grid
 
                     if (columnSpinStates[columnIndex] == SpinState.Decelerating)
                     {
-                        currentSpinSpeeds[columnIndex] -= deceleration * Time.deltaTime;
-                        if (currentSpinSpeeds[columnIndex] <= spinSpeedBottomLimit)
+                        currentSpinSpeeds[columnIndex] -= _data.GridSpinData.deceleration * Time.deltaTime;
+                        if (currentSpinSpeeds[columnIndex] <= _data.GridSpinData.spinSpeedBottomLimit)
                         {
-                            currentSpinSpeeds[columnIndex] = spinSpeedBottomLimit;
+                            currentSpinSpeeds[columnIndex] = _data.GridSpinData.spinSpeedBottomLimit;
                         }
                     }
                 }
@@ -232,9 +238,9 @@ namespace Controllers.Grid
             }
         }
         
-        private Dictionary<Interactable, Vector3> SetTargetPositions(List<Interactable> interactablesOfColumn)
+        private Dictionary<InteractableManager, Vector3> SetTargetPositions(List<InteractableManager> interactablesOfColumn)
         {
-            Dictionary<Interactable, Vector3> targetPositions = new Dictionary<Interactable, Vector3>();
+            Dictionary<InteractableManager, Vector3> targetPositions = new Dictionary<InteractableManager, Vector3>();
 
             foreach (var interactable in interactablesOfColumn)
             {
@@ -243,14 +249,14 @@ namespace Controllers.Grid
                     Debug.LogWarning("Interactable is null in SetTargetPositions.");
                     continue;
                 }
-                Vector3 targetPosition = interactable.transform.position - new Vector3(0, gridSpacing, 0);
+                Vector3 targetPosition = interactable.transform.position - new Vector3(0, GridSpacing, 0);
                 targetPositions[interactable] = targetPosition;
             }
 
             return targetPositions;
         }
         
-        private void AddExtraElementOnTop(List<Interactable> interactablesOfColumn, int columnIndex)
+        private void AddExtraElementOnTop(List<InteractableManager> interactablesOfColumn, int columnIndex)
         {
             var extraElement = GameSignals.Instance.onGetInteractable.Invoke();
 
@@ -279,7 +285,7 @@ namespace Controllers.Grid
                 GameSignals.Instance.onAssignRandomTypeToInteractable(extraElement);
             }
             extraElement.gameObject.SetActive(true);
-            extraElement.transform.position = _interactableGridSystem.GridPositionToWorldPosition(new Vector2Int(columnIndex, Dimensions.y - 1),transform) + new Vector3(0, gridSpacing, 0);
+            extraElement.transform.position = _interactableGridSystem.GridPositionToWorldPosition(new Vector2Int(columnIndex, Dimensions.y - 1),transform) + new Vector3(0, GridSpacing, 0);
 
             interactablesOfColumn.Add(extraElement);
         }

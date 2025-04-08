@@ -1,3 +1,4 @@
+using System;
 using Data.UnityObjects;
 using UnityEngine;
 
@@ -6,17 +7,17 @@ namespace Commands.Grid
     public class PlaceGridCommand
     {
         private CD_Grid _data;
-        private Vector2Int _dimensions;
         private Transform _gridTransform;
+        private Func<Vector2Int> _getDimensions;
         
-        float GridWidth => _dimensions.x * _data.GridViewData.GridUnit;
-        float GridHeight => _dimensions.y * _data.GridViewData.GridUnit;
+        float GridWidth => _getDimensions().x * _data.GridViewData.GridUnit;
+        float GridHeight => _getDimensions().y * _data.GridViewData.GridUnit;
         
-        public PlaceGridCommand(CD_Grid data,Transform gridTransform, Vector2Int dimensions)
+        public PlaceGridCommand(CD_Grid data,Transform gridTransform, Func<Vector2Int> getDimensions)
         {
             _data = data;
             _gridTransform = gridTransform;
-            _dimensions = dimensions;
+            _getDimensions = getDimensions;
         }
 
         internal void Execute()

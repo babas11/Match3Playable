@@ -95,10 +95,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 6378324254703665703}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 46da88cc7e8994ac0a20ac1b0a641925, type: 3}
+  m_Script: {fileID: 11500000, guid: b94b6b882890a4446a20715745c1101f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   id: 0
+  matrixPosition: {x: -1, y: -1}
+  Idle: 1
 --- !u!61 &1813191664100951965
 BoxCollider2D:
   m_ObjectHideFlags: 0

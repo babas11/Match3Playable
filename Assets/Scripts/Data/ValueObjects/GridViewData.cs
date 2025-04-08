@@ -10,5 +10,6 @@ namespace Data.ValueObjects
         public float BackgroundOverScale;
         public float GridUnit;
         public float GridBottomOffset;
+        public int minimumAmountOfEachType;
     }
 }

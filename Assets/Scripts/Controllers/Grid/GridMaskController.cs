@@ -20,13 +20,16 @@ namespace Controllers.Grid
         private CD_Grid _data;
         private Vector2Int _dimensions;
 
-        #endregion
+        private float gridUnit => _data.GridViewData.GridUnit;
 
         #endregion
 
-        public void SetMaskControllerData(CD_Grid data, Vector2Int dimensions)
+        #endregion
+
+        public void SetMaskControllerData( Vector2Int dimensions, CD_Grid data = null)
         {
-            _data = data;
+            if(data != null)
+                _data = data;
             _dimensions = dimensions;
         }
 
@@ -34,7 +37,7 @@ namespace Controllers.Grid
         {
             _spriteMask.sprite = _renderer.sprite;
             _spriteMask.alphaCutoff = 0;
-            _spriteMask.transform.localScale = new Vector3(_dimensions.x +maskOverSize, _dimensions.y +maskOverSize);
+            _spriteMask.transform.localScale = new Vector3(_dimensions.x * gridUnit * maskOverSize, _dimensions.y * gridUnit * maskOverSize);
         }
     }
 }

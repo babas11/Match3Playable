@@ -6,8 +6,8 @@ namespace Data.ValueObjects
     [Serializable]
     public struct GridSpinData
     {
+        public float currentSpinSpeed;
         public float spinSpeedBottomLimit ;
         public float deceleration;
-        public int minimumAmountOfEachType;
     }
 }

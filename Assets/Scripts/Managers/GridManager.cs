@@ -5,6 +5,7 @@ using Controllers.Grid;
 using Data.UnityObjects;
 using Enums;
 using Extensions;
+using Grid;
 using Signals;
 using UnityEngine;
 
@@ -16,26 +17,22 @@ namespace Managers
 
         #region Private Variables
         
-        InteractableGridSystem interactableGridSystem;
-        [SerializeField] GridSpinController gridSpinner;
-        FillGridCommand _fillGridCommand;
+        private InteractableGridSystem interactableGridSystem;
+        private OnSwapCommand onSwapCommand;
+        private FillGridCommand _fillGridCommand;
         private PlaceGridCommand _placeGridCommand;
-
+        
+        private CD_Grid _gridData;
+        private Vector2Int Dimensions => interactableGridSystem.Dimensions;
+        private int minimumAmountOfEachType = 3;
+        
+        #endregion
+        
+        #region Serialized Variables
+        
         [SerializeField] private GridSpriteController spriteController;
         [SerializeField] private GridMaskController gridMaskController;
-        private CD_Grid _gridData;
-        [SerializeField]
-        private Vector2Int Dimensions => interactableGridSystem.Dimensions;
-
-
-        Coroutine[] spinCoroutines;
-
-        [Tooltip("Distance between each grid cell")]
-        [SerializeField]
-        private float gridSpacing = 0.6f;
-        public float GridSpacing => gridSpacing;
-        
-        private int minimumAmountOfEachType = 3;
+        [SerializeField] GridSpinController gridSpinner;
 
         
         #endregion
@@ -45,9 +42,8 @@ namespace Managers
 
         private void Awake()
         {
-            GetData();
+            GetData();    
             Init();
-            print(Dimensions);
         }
 
         private void GetData()
@@ -59,13 +55,14 @@ namespace Managers
         {
             interactableGridSystem = new InteractableGridSystem();
             interactableGridSystem.CreateGrid();
-            gridSpinner.Init(interactableGridSystem);
-            spriteController.SetRendererData(_gridData,Dimensions);
-            gridMaskController.SetMaskControllerData(_gridData,Dimensions);
+            gridSpinner.Init(interactableGridSystem,_gridData);
+            spriteController.SetRendererData(Dimensions, _gridData);
+            gridMaskController.SetMaskControllerData(Dimensions, _gridData);
 
-            _placeGridCommand = new PlaceGridCommand(_gridData,transform,Dimensions);
+            _placeGridCommand = new PlaceGridCommand(_gridData,transform,() => Dimensions);
             _fillGridCommand = new FillGridCommand(interactableGridSystem);
-            
+            onSwapCommand = new OnSwapCommand(interactableGridSystem,this);
+
         }
 
         private void OnEnable()
@@ -78,6 +75,27 @@ namespace Managers
             GameSignals.Instance.onGameInitialize += BuildGrid;
             GameSignals.Instance.onGetGrid += () => interactableGridSystem;
             GameSignals.Instance.onSpinButtonPressed += gridSpinner.StartSpin;
+            GameSignals.Instance.onSwap += onSwapCommand.Execute;
+            GameSignals.Instance.onRestart += OnRestart;
+        }
+
+        private void OnRestart()
+        {
+            ClearGrid();
+            interactableGridSystem.CreateGrid();
+            spriteController.SetRendererData(Dimensions);
+            gridMaskController.SetMaskControllerData(Dimensions);
+            gridMaskController.SetSpriteMask();
+            spriteController.SetGridBackGroundSprite();
+            
+            
+            List<InteractableManager> interactablesToFill =
+                GameSignals.Instance.onGetStartInteractables?.Invoke(minimumAmountOfEachType, interactableGridSystem.GridCapacity);
+            
+            _placeGridCommand.Execute();
+            _fillGridCommand.Execute(interactablesToFill,interactableGridSystem.Dimensions,transform);
+            gridSpinner.Init(interactableGridSystem);
+                
         }
 
         private void BuildGrid()
@@ -85,7 +103,7 @@ namespace Managers
             spriteController.SetGridBackGroundSprite();
             gridMaskController.SetSpriteMask();
             GameSignals.Instance.onGridInitialize(Dimensions);
-            List<Interactable> interactablesToFill =
+            List<InteractableManager> interactablesToFill =
                 GameSignals.Instance.onGetStartInteractables?.Invoke(minimumAmountOfEachType, interactableGridSystem.GridCapacity);
             _placeGridCommand.Execute();
             _fillGridCommand.Execute(interactablesToFill,interactableGridSystem.Dimensions,transform);
@@ -106,6 +124,7 @@ namespace Managers
         private void ClearGrid()
         {
             gridSpinner.StopAllCoroutines();
+            StopAllCoroutines();
             interactableGridSystem.ClearGrid();
             GameSignals.Instance.onClearPool?.Invoke();
         }
